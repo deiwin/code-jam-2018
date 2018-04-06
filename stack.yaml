@@ -1,0 +1,27 @@
+# For more information about stack's configuration, see
+# http://docs.haskellstack.org/en/stable/yaml_configuration/
+#
+packages: []
+resolver: ghc-8.0.1
+extra-deps:
+- ansi-terminal-0.7.1.1
+- async-2.1.1.1
+- clock-0.7.2
+- mtl-2.2.1
+- optparse-applicative-0.14.0.0
+- regex-tdfa-1.2.2
+- stm-2.4.4.1
+- tagged-0.8.5
+- unbounded-delays-0.1.1.0
+- ansi-wl-pprint-0.6.8.1
+- colour-2.3.3
+- parsec-3.1.11
+- regex-base-0.93.2
+- transformers-compat-0.5.1.4
+- text-1.2.2.2
+- QuickCheck-2.10.0.1
+- random-1.1
+- tf-random-0.5
+- primitive-0.6.2.0
+- smallcheck-1.1.2
+- logict-0.6.0.2
