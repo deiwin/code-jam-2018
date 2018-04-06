@@ -25,3 +25,6 @@ extra-deps:
 - primitive-0.6.2.0
 - smallcheck-1.1.2
 - logict-0.6.0.2
+- exceptions-0.8.3
+- mmorph-1.1.0
+- void-0.7.2
