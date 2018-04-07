@@ -12,7 +12,7 @@ import qualified Pipes.Prelude as Pipes
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests, minDamageTests]
+tests = testGroup "Tests" [unitTests, minDamageTests, currentDamageTests]
 
 unitTests = testGroup "Unit tests"
   [ testCase "given examples" $
@@ -43,4 +43,15 @@ minDamageTests = testGroup "countMinDamage" $ map makeMinDamageTest
     , ("SCCSSC", 3)
     , ("SCCSSCS", 4)
     , ("SCCSSCC", 3)
+    ]
+
+makeCurrentDamageTest :: (String, Int) -> TestTree
+makeCurrentDamageTest (string, result) = testCase (string ++ " == " ++ show result) $
+    countCurrentDamage string @?= result
+
+currentDamageTests = testGroup "countCurrentDamage" $ map makeCurrentDamageTest
+    [ ("CS", 2)
+    , ("SCCSSC", 9)
+    , ("SCCSSCS", 17)
+    , ("SCCSSCC", 9)
     ]
