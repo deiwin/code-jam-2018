@@ -12,7 +12,7 @@ import qualified Pipes.Prelude as Pipes
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests]
+tests = testGroup "Tests" [unitTests, solveCaseTests]
 
 unitTests = testGroup "Unit tests"
   [ testCase "given examples" $
@@ -27,3 +27,15 @@ unitTests = testGroup "Unit tests"
          "Case #2: 1"
       ]
   ]
+
+makeSolveCaseTest :: ([Int], Maybe Int) -> TestTree
+makeSolveCaseTest (list, result) = testCase (unwords (map show (take 10 list)) ++ " -> " ++ (show result)) $
+    solveCase (length list) list @?= result
+
+solveCaseTests = testGroup "solveCase" $ map makeSolveCaseTest
+    [ ([5, 6, 8, 4, 3], Nothing)
+    , ([8, 9, 7], Just 1)
+    , ([1, 2, 4, 3, 5, 6, 7, 8], Just 2)
+    , ((reverse [0..100000]), Nothing)
+    , ([0..100000], Nothing)
+    ]
