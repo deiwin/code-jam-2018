@@ -12,7 +12,7 @@ import qualified Pipes.Prelude as Pipes
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests, minDamageTests, currentDamageTests]
+tests = testGroup "Tests" [unitTests, minDamageTests, currentDamageTests, hackTests]
 
 unitTests = testGroup "Unit tests"
   [ testCase "given examples" $
@@ -54,4 +54,15 @@ currentDamageTests = testGroup "countCurrentDamage" $ map makeCurrentDamageTest
     , ("SCCSSC", 9)
     , ("SCCSSCS", 17)
     , ("SCCSSCC", 9)
+    ]
+
+makeHackTest :: (String, String) -> TestTree
+makeHackTest (string, result) = testCase (string ++ " -> " ++ result) $
+    hack string @?= result
+
+hackTests = testGroup "countHack" $ map makeHackTest
+    [ ("CS", "SC")
+    , ("SCCSSC", "SCSCSC")
+    , ("SCCSSCS", "SCCSSSC")
+    , ("SCCSSCC", "SCSCSCC")
     ]
