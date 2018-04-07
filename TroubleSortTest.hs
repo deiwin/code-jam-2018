@@ -35,7 +35,12 @@ makeSolveCaseTest (list, result) = testCase (unwords (map show (take 10 list)) +
 solveCaseTests = testGroup "solveCase" $ map makeSolveCaseTest
     [ ([5, 6, 8, 4, 3], Nothing)
     , ([8, 9, 7], Just 1)
+    , ([-2, -1, 0, 1, 2, 4, 3, 5, 6, 7, 8], Just 5)
+    , ([-1, 0, 1, 2, 4, 3, 5, 6, 7, 8], Just 4)
+    , ([0, 1, 2, 4, 3, 5, 6, 7, 8], Just 3)
     , ([1, 2, 4, 3, 5, 6, 7, 8], Just 2)
+    , ([2, 4, 3, 5, 6, 7, 8], Just 1)
+    , ([4, 3, 5, 6, 7, 8], Just 0)
     , ((reverse [0..100000]), Nothing)
     , ([0..100000], Nothing)
     ]
