@@ -1,3 +1,8 @@
+module SavingUniverse where
+
+import Pipes
+import qualified Pipes.Prelude as Pipes
+
 type Instructions = String
 
 countMinDamage :: Instructions -> Int
@@ -30,19 +35,22 @@ solveCase maxDamage instructions
   | countMinDamage instructions > maxDamage = Nothing
   | otherwise = Just $ countMinHacks instructions maxDamage
 
-solve' :: Int -> Int -> IO ()
+solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    caseInput <- getLine
+    caseInput <- await
     let inputValues = words caseInput
         maxDamage = read $ inputValues!!0
         instructions = inputValues!!1
         solution = maybe "IMPOSSIBLE" show (solveCase maxDamage instructions)
-     in putStrLn $ "Case #" ++ (show $ nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+     in yield $ "Case #" ++ (show $ nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-main :: IO ()
-main = do
-    nrOfTestCasesStr <- getLine
+solve :: Monad m => Pipe String String m ()
+solve = do
+    nrOfTestCasesStr <- await
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
+
+main :: IO ()
+main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
