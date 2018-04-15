@@ -13,9 +13,3 @@ stack runghc \
   --package pipes \
   <FILE_NAME>
 ```
-
-Used via the following vim binding:
-
-```
-:map <leader>r :split \| :terminal stack runghc --package tasty --package tasty-hunit --package tasty-quickcheck --package tasty-smallcheck --package pipes %<CR>
-```
