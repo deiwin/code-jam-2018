@@ -56,4 +56,13 @@ unitTests = testGroup "Unit tests"
   , testCase "hasChip" $ do
       hasChip '@' @?= True
       hasChip '.' @?= False
+  , testCase "chipsInColumns" $ do
+      chipsInColumns 3 [[True, False, False]] @?= [1, 0, 0]
+      chipsInColumns 3 [[True, False, False], [True, True, False]] @?= [2, 1, 0]
+  , testCase "chipsInRows" $ do
+      chipsInRows [[True, False, False]] @?= [1]
+      chipsInRows [[True, False, False], [True, True, False]] @?= [1, 2]
+  , testCase "totalChips" $ do
+      totalChips [[True, False, False]] @?= 1
+      totalChips [[True, False, False], [True, True, False]] @?= 3
   ]
