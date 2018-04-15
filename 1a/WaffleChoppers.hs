@@ -44,8 +44,8 @@ canCut grid rows columns hCuts vCuts =
         total = foldl (+) 0 inRows
         hSlices = hCuts + 1
         vSlices = vCuts + 1
-        (chipsPerHSlice, hLeftOver) = divMod total hSlices
-        (chipsPerVSlice, vLeftOver) = divMod total vSlices
+        (chipsPerHSlice, hLeftOver) = quotRem total hSlices
+        (chipsPerVSlice, vLeftOver) = quotRem total vSlices
      in if hLeftOver /= 0 || vLeftOver /= 0
            then False
            else canDistribute inRows chipsPerHSlice &&
