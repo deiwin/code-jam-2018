@@ -14,9 +14,7 @@ needsFlip :: IsHappy -> Bool
 needsFlip = not
 
 canFlip :: FlipperLength -> [IsHappy] -> Bool
-canFlip 0 pancakes = True
-canFlip flipperLength [] = False
-canFlip flipperLength (first:rest) = canFlip (flipperLength - 1) rest
+canFlip flipperLength pancakes = (length $ take flipperLength pancakes) == flipperLength
 
 flipN :: Int -> [IsHappy] -> [IsHappy]
 flipN 0 pancakes = pancakes
