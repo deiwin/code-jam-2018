@@ -3,11 +3,15 @@ module WaffleChoppers where
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Control.Monad
+import Control.Applicative
 import Data.Bool
 
 type ChipCount = Int
 type Row = [ChipCount]
 type Grid = [Row]
+
+fst3 :: (a, b, c) -> a
+fst3 (x, _, _) = x
 
 hasChip :: Char -> Bool
 hasChip = (== '@')
@@ -16,41 +20,72 @@ readGrid :: Monad m => Int -> Pipe String String m Grid
 readGrid rowsToRead =
     foldM fn [] [1..rowsToRead]
         where fn acc _ = do line <- await
-                            return ((map (bool 0 1 . hasChip) line):acc)
+                            return (map (bool 0 1 . hasChip) line:acc)
 
 chipsInColumns :: Int -> Grid -> [Int]
-chipsInColumns columns grid = foldl (zipWith (+)) (take columns $ repeat 0) grid
+chipsInColumns columns = foldl (zipWith (+)) $ replicate columns 0
 
 chipsInRows :: Grid -> [Int]
-chipsInRows = map $ foldl (+) 0
+chipsInRows = map sum
 
 totalChips :: Grid -> Int
-totalChips = foldl (+) 0 . chipsInRows
+totalChips = sum . chipsInRows
 
-canDistribute' :: Int -> [Int] -> Int -> Bool
-canDistribute' chipsLeftPerSlice [] chipsPerSlice = chipsLeftPerSlice == chipsPerSlice
-canDistribute' chipsLeftPerSlice (chipsInUnit:rest) chipsPerSlice
-  | chipsInUnit > chipsLeftPerSlice = False
-  | chipsInUnit == chipsLeftPerSlice = canDistribute' chipsPerSlice rest chipsPerSlice
-  | otherwise = canDistribute' (chipsLeftPerSlice - chipsInUnit) rest chipsPerSlice
-canDistribute :: [Int] -> Int -> Bool
-canDistribute chipsToDistribute chipsPerSlice =
-    canDistribute' chipsPerSlice chipsToDistribute chipsPerSlice
+canDistribute :: Int -> Grid -> Bool
+canDistribute chipsPerPiece = all $ all (== chipsPerPiece)
+
+reduceRowToPieces' :: Int -> (Row, Int, Int) -> (Int, Int) -> Maybe (Row, Int, Int)
+reduceRowToPieces' perVSlice (row, chipsLeftPerSlice, chipAcc) (chipsInColumn, chipsInSquare)
+  | chipsInColumn > chipsLeftPerSlice = Nothing
+  | chipsInColumn == chipsLeftPerSlice =
+      let newRow = (chipsInSquare + chipAcc):row
+       in Just (newRow, perVSlice, 0)
+  | otherwise =
+      let newChipsLeftPerSlice = chipsLeftPerSlice - chipsInColumn
+          newChipAcc = chipAcc + chipsInSquare
+       in Just (row, newChipsLeftPerSlice, newChipAcc)
+reduceRowToPieces :: [Int] -> Int -> Row -> Maybe Row
+reduceRowToPieces inColumns perVSlice =
+    let fn = reduceRowToPieces' perVSlice
+        initialChipAcc = 0
+     in fmap fst3 .
+         foldM fn ([], perVSlice, initialChipAcc) .
+             zip inColumns
+
+reduceGridToPieces' :: Int -> (Grid, Int, Row) -> (Int, Maybe Row) -> Maybe (Grid, Int, Row)
+reduceGridToPieces' perHSlice acc (chipsInRow, Nothing) = Nothing
+reduceGridToPieces' perHSlice (grid, chipsLeftPerSlice, accRow) (chipsInRow, Just row)
+  | chipsInRow > chipsLeftPerSlice = Nothing
+  | chipsInRow == chipsLeftPerSlice =
+      let newGrid = zipWith (+) row accRow:grid
+          emptyAccRow = map (const 0) accRow
+       in Just (newGrid, perHSlice, emptyAccRow)
+  | otherwise =
+      let newChipsLeftPerSlice = chipsLeftPerSlice - chipsInRow
+          newAccRow = zipWith (+) row accRow
+       in Just (grid, newChipsLeftPerSlice, newAccRow)
+reduceGridToPieces :: [Int] -> Int -> [Int] -> Int -> Grid -> Maybe Grid
+reduceGridToPieces inRows perHSlice inColumns perVSlice =
+    let initialAccRow = map (const 0) inColumns
+        fn = reduceGridToPieces' perHSlice
+     in fmap fst3 .
+         foldM fn ([], perHSlice, initialAccRow) .
+             zip inRows .
+                 map (reduceRowToPieces inColumns perVSlice)
 
 canCut :: Grid -> Int -> Int -> Int -> Int -> Bool
 canCut grid rows columns hCuts vCuts =
     let inColumns = chipsInColumns columns grid
         inRows = chipsInRows grid
-        total = foldl (+) 0 inRows
+        total = sum inRows
         hSlices = hCuts + 1
         vSlices = vCuts + 1
         (chipsPerHSlice, hLeftOver) = quotRem total hSlices
         (chipsPerVSlice, vLeftOver) = quotRem total vSlices
-        totalLeftOver = rem total (hSlices * vSlices)
-     in if hLeftOver /= 0 || vLeftOver /= 0 || totalLeftOver /= 0
-           then False
-           else canDistribute inRows chipsPerHSlice &&
-               canDistribute inColumns chipsPerVSlice
+        (chipsPerPiece, totalLeftOver) = quotRem total (hSlices * vSlices)
+     in hLeftOver == 0 && vLeftOver == 0 && totalLeftOver == 0 &&
+         maybe False (canDistribute chipsPerPiece)
+             (reduceGridToPieces inRows chipsPerHSlice inColumns chipsPerVSlice grid)
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
@@ -59,7 +94,7 @@ solve' testCasesLeft nrOfTestCases = do
     let (rows:columns:hCuts:vCuts:_) = map read $ words line
     grid <- readGrid rows
     let solution = bool "IMPOSSIBLE" "POSSIBLE" $ canCut grid rows columns hCuts vCuts
-    yield $ "Case #" ++ (show $ nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
 solve :: Monad m => Pipe String String m ()

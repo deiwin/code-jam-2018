@@ -65,4 +65,8 @@ unitTests = testGroup "Unit tests"
   , testCase "totalChips" $ do
       totalChips [[1, 0, 0]] @?= 1
       totalChips [[1, 0, 0], [1, 1, 0]] @?= 3
+  , testCase "canDistribute" $ do
+      canDistribute 2 [[2, 2], [2, 2]] @?= True
+      canDistribute 3 [[2, 2], [2, 2]] @?= False
+      canDistribute 2 [[3, 2], [2, 2]] @?= False
   ]
