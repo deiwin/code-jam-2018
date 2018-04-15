@@ -2,6 +2,7 @@ module WaffleChoppers where
 
 import Pipes
 import qualified Pipes.Prelude as Pipes
+import Control.Monad
 
 type HasChip = Bool
 type Row = [HasChip]
@@ -10,14 +11,11 @@ type Grid = [Row]
 hasChip :: Char -> HasChip
 hasChip = (== '@')
 
-readGrid' :: Monad m => Grid -> Int -> Pipe String String m Grid
-readGrid' acc 0 = return acc -- acc should be reversed, but doesn't matter in our case
-readGrid' acc rowsToRead = do
-    line <- await
-    let row = map hasChip line
-    readGrid' (row:acc) (rowsToRead -1 )
 readGrid :: Monad m => Int -> Pipe String String m Grid
-readGrid = readGrid' []
+readGrid rowsToRead =
+    foldM fn [] [1..rowsToRead]
+        where fn acc _ = do line <- await
+                            return ((map hasChip line):acc)
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
