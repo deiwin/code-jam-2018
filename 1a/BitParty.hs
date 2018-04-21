@@ -3,7 +3,7 @@ module BitParty where
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Control.Monad (foldM)
-import Data.List (sortBy, insertBy)
+import Data.List (sortBy, insertBy, minimumBy, delete)
 import Data.Ord (comparing)
 import Data.Monoid ((<>))
 
@@ -35,6 +35,12 @@ sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit <> comparing 
 noRobotAssigned :: Cashier -> Bool
 noRobotAssigned cashier = bitCapacity cashier == maxBits cashier
 
+bestWithNBits :: Int -> [Cashier] -> Cashier
+bestWithNBits bits = minimumBy $ comparing (\x ->
+    if bitCapacity x < bits
+       then maxBound
+       else timeWithNextBit x + scanTime x * (bits - 1))
+
 totalTime :: [Cashier] -> [Cashier] -> [Cashier] -> Int -> Int -> Int
 -- Robot counts shouldn't fall below 0
 totalTime cashiers filledCashiers ignoredCashiers robotCount bitCount
@@ -57,30 +63,40 @@ totalTime (first:rest) filledCashiers ignoredCashiers 0 bitCount
   | noRobotAssigned first =
       totalTime rest filledCashiers (putSortedByLeastTimeForBit first ignoredCashiers) 0 bitCount
 
--- We have one last bit to give and the first cashier is ready to receive it
--- and is the best candidate for it. The answer is however long it takes for
--- this cashier to process all current bits and the one last bit, because all
--- other cashiers will be done faster.
-totalTime (first:rest) _ _ robotCount 1 = timeWithNextBit first
-
 -- Otherwise give one bit to the first cashier in the list (the fastest one to
 -- process one additional bit). If that's the last bit the cashier can process,
 -- then put them into the filledCashiers list, otherwise put them back into the
--- list of cashiers, keeping the list sorted.
+-- list of cashiers, keeping the list sorted. Maybe replace with a cashier from
+-- the ignored list, if any are better fits. Finish if that was the last bit.
 totalTime (first:rest) filledCashiers ignoredCashiers robotCount bitCount =
     let updatedCashier = first { timeWithNextBit=timeWithNextBit first + scanTime first
                                , bitCapacity=bitCapacity first - 1
                                }
-        nextCashiers = if bitCapacity updatedCashier == 0
+        updatedCashierBits = maxBits updatedCashier - bitCapacity updatedCashier
+        restoredCashier = updatedCashier { timeWithNextBit=timeWithNextBit updatedCashier - updatedCashierBits * scanTime updatedCashier
+                                         , bitCapacity=maxBits updatedCashier
+                                         }
+        bestCashierCandidate = bestWithNBits updatedCashierBits (restoredCashier:ignoredCashiers)
+        bestCashier = if bestCashierCandidate == restoredCashier
+                         then updatedCashier
+                         else bestCashierCandidate { timeWithNextBit=timeWithNextBit bestCashierCandidate + updatedCashierBits * scanTime bestCashierCandidate
+                                                   , bitCapacity=bitCapacity bestCashierCandidate - updatedCashierBits
+                                                   }
+        nextCashiers = if bitCapacity bestCashier == 0
                           then rest
-                          else putSortedByLeastTimeForBit updatedCashier rest
-        nextFilledCashiers = if bitCapacity updatedCashier == 0
-                                then insertBy (comparing maxBits) updatedCashier filledCashiers
+                          else putSortedByLeastTimeForBit bestCashier rest
+        nextFilledCashiers = if bitCapacity bestCashier == 0
+                                then insertBy (comparing maxBits) bestCashier filledCashiers
                                 else filledCashiers
         nextRobotCount = if noRobotAssigned first
                             then robotCount - 1
                             else robotCount
-     in totalTime nextCashiers nextFilledCashiers ignoredCashiers nextRobotCount (bitCount - 1)
+        nextIgnoredCashiers = if bestCashierCandidate == restoredCashier
+                                 then ignoredCashiers
+                                 else putSortedByLeastTimeForBit restoredCashier $ delete bestCashier ignoredCashiers
+     in if bitCount == 1
+           then timeWithNextBit bestCashier - scanTime bestCashier
+           else totalTime nextCashiers nextFilledCashiers nextIgnoredCashiers nextRobotCount (bitCount - 1)
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
