@@ -39,11 +39,6 @@ sortCashiersByLeastTimeForBit :: [Cashier] -> [Cashier]
 sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit
 
 totalTime :: [Cashier] -> [Cashier] -> Int -> Int -> Int
-totalTime (first:rest) filledCashiers robotCount bitCount
-    | Cashier{bitCapacity=0} <- first =
-        let nextFilledCashiers = putSortedBy (comparing maxBits) first filledCashiers
-         in totalTime rest nextFilledCashiers robotCount bitCount
-    | False = undefined
 totalTime cashiers (first:rest) 0 bitCount =
     totalTime cashiers rest 1 (bitCount + maxBits first)
 totalTime (first:rest) _ robotCount 1 = timeWithNextBit first
@@ -51,11 +46,16 @@ totalTime (first:rest) filledCashiers robotCount bitCount =
     let updatedCashier = first { timeWithNextBit=timeWithNextBit first + scanTime first
                                , bitCapacity=bitCapacity first - 1
                                }
-        nextCashiers = putSortedByLeastTimeForBit updatedCashier rest
+        nextCashiers = if bitCapacity updatedCashier == 0
+                          then rest
+                          else putSortedByLeastTimeForBit updatedCashier rest
+        nextFilledCashiers = if bitCapacity updatedCashier == 0
+                                then putSortedBy (comparing maxBits) updatedCashier filledCashiers
+                                else filledCashiers
         nextRobotCount = if maxBits first == bitCapacity first
                             then robotCount - 1
                             else robotCount
-     in totalTime nextCashiers filledCashiers nextRobotCount (bitCount - 1)
+     in totalTime nextCashiers nextFilledCashiers nextRobotCount (bitCount - 1)
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
