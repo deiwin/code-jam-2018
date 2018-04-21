@@ -12,7 +12,7 @@ import qualified Pipes.Prelude as Pipes
 main = defaultMain tests
 
 tests :: TestTree
-tests = testGroup "Tests" [unitTests, putSortedByLeastTimeForBitTests]
+tests = testGroup "Tests" [unitTests]
 
 unitTests = testGroup "Unit tests"
   [ testCase "given examples" $
@@ -42,30 +42,10 @@ unitTests = testGroup "Unit tests"
           "Case #3: 7",
           "Case #4: 8"
       ]
-  , testCase "sortCashiersByLeastTimeForBit" $ do
-      sortCashiersByLeastTimeForBit [cashierWithTime 3, cashierWithTime 4, cashierWithTime 2] @?=
-          [cashierWithTime 2, cashierWithTime 3, cashierWithTime 4]
-      sortCashiersByLeastTimeForBit [cashierWithTime 4, cashierWithTime 3, cashierWithTime 2] @?=
-          [cashierWithTime 2, cashierWithTime 3, cashierWithTime 4]
-      sortCashiersByLeastTimeForBit [cashierWithTime 4, (cashierWithTime 2){scanTime=1}, cashierWithTime 2] @?=
-          [cashierWithTime 2, (cashierWithTime 2){scanTime=1}, cashierWithTime 4]
+  , testCase "capacity" $ do
+      capacity 10 (Cashier 3 4 5) @?= 1
+      capacity 10 (Cashier 3 4 2) @?= 2
+      capacity 10 (Cashier 1 4 2) @?= 1
+  , testCase "binarySearch" $
+      binarySearch (>= 7) 0 100 @?= 7
   ]
-
-cashierWithTime :: Integer -> Cashier
-cashierWithTime time = Cashier { timeWithNextBit=time
-                               , bitCapacity=0
-                               , maxBits = 0
-                               , scanTime=0
-                               }
-
-makePutSortedByLeastTimeForBitTest :: (Integer, [Integer], [Integer]) -> TestTree
-makePutSortedByLeastTimeForBitTest (val, list, newList) = testCase (show val ++ " into " ++ show list) $
-    putSortedByLeastTimeForBit  (cashierWithTime val) (map cashierWithTime list) @?=
-        map cashierWithTime newList
-
-putSortedByLeastTimeForBitTests = testGroup "putSortedByLeastTimeForBit" $ map makePutSortedByLeastTimeForBitTest
-    [ (1, [2, 3, 4], [1, 2, 3, 4])
-    , (2, [1, 3, 4], [1, 2, 3, 4])
-    , (2, [2, 3, 4], [2, 2, 3, 4])
-    , (3, [1], [1, 3])
-    ]
