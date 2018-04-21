@@ -17,7 +17,7 @@ tests = testGroup "Tests" [unitTests, putSortedByLeastTimeForBitTests]
 unitTests = testGroup "Unit tests"
   [ testCase "given examples" $
       Pipes.toList (each [
-          "3",
+          "4",
           "2 2 2",
           "1 2 3",
           "1 1 2",
@@ -29,11 +29,18 @@ unitTests = testGroup "Unit tests"
           "2 1 5",
           "2 4 2",
           "2 2 4",
-          "2 5 1"
+          "2 5 1",
+          "3 4 5",
+          "9 4 2",
+          "9 1 6",
+          "9 4 2",
+          "9 4 2",
+          "9 4 2"
       ] >-> solve) @?= [
           "Case #1: 5",
           "Case #2: 4",
-          "Case #3: 7"
+          "Case #3: 7",
+          "Case #4: 8"
       ]
   , testCase "sortCashiersByLeastTimeForBit" $ do
       sortCashiersByLeastTimeForBit [cashierWithTime 3, cashierWithTime 4, cashierWithTime 2] @?=
