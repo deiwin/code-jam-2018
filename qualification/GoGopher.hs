@@ -3,6 +3,8 @@ module GoGopher where
 import Pipes
 import qualified Pipes.Prelude as Pipes
 
+import System.IO
+
 type Grid = [Row]
 type Row = [Bool]
 
@@ -65,4 +67,6 @@ solve = do
      in solve' nrOfTestCases nrOfTestCases
 
 main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
+main = do
+    hSetBuffering stdin NoBuffering
+    runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
