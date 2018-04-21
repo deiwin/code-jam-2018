@@ -38,11 +38,42 @@ putSortedByLeastTimeForBit = putSortedBy $ comparing timeWithNextBit
 sortCashiersByLeastTimeForBit :: [Cashier] -> [Cashier]
 sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit
 
-totalTime :: [Cashier] -> [Cashier] -> Int -> Int -> Int
-totalTime cashiers (first:rest) 0 bitCount =
-    totalTime cashiers rest 1 (bitCount + maxBits first)
-totalTime (first:rest) _ robotCount 1 = timeWithNextBit first
-totalTime (first:rest) filledCashiers robotCount bitCount =
+noRobotAssigned :: Cashier -> Bool
+noRobotAssigned cashier = bitCapacity cashier == maxBits cashier
+
+totalTime :: [Cashier] -> [Cashier] -> [Cashier] -> Int -> Int -> Int
+-- Robot counts shouldn't fall below 0
+totalTime cashiers filledCashiers ignoredCashiers robotCount bitCount
+  | robotCount < 0 = error "uh oh"
+
+-- If we run out of cashiers to use (all are eiteher filled or ignored), then
+-- remove the first (the one with the smallest maxBits, because that will give
+-- us the least amount of extra work to do) cashier from filledCashiers and use
+-- the first one from ignored cashiers instead.
+totalTime [] (firstFilled:restFilled) (firstIgnored:restIgnored) 0 bitCount =
+    totalTime [firstIgnored] restFilled restIgnored 1 (bitCount + maxBits firstFilled)
+
+-- Cashiers should only run empty in the above case. E.g. the robot count
+-- should be 0.
+totalTime [] _ _ _ _ = error "Shouldn't happen"
+
+-- If we don't have any more robots, and the first cashier doesn't have a robot
+-- yet (maxBits == bitCapacity), then ignore the cashier for now
+totalTime (first:rest) filledCashiers ignoredCashiers 0 bitCount
+  | noRobotAssigned first =
+      totalTime rest filledCashiers (putSortedByLeastTimeForBit first ignoredCashiers) 0 bitCount
+
+-- We have one last bit to give and the first cashier is ready to receive it
+-- and is the best candidate for it. The answer is however long it takes for
+-- this cashier to process all current bits and the one last bit, because all
+-- other cashiers will be done faster.
+totalTime (first:rest) _ _ robotCount 1 = timeWithNextBit first
+
+-- Otherwise give one bit to the first cashier in the list (the fastest one to
+-- process one additional bit). If that's the last bit the cashier can process,
+-- then put them into the filledCashiers list, otherwise put them back into the
+-- list of cashiers, keeping the list sorted.
+totalTime (first:rest) filledCashiers ignoredCashiers robotCount bitCount =
     let updatedCashier = first { timeWithNextBit=timeWithNextBit first + scanTime first
                                , bitCapacity=bitCapacity first - 1
                                }
@@ -52,10 +83,10 @@ totalTime (first:rest) filledCashiers robotCount bitCount =
         nextFilledCashiers = if bitCapacity updatedCashier == 0
                                 then putSortedBy (comparing maxBits) updatedCashier filledCashiers
                                 else filledCashiers
-        nextRobotCount = if maxBits first == bitCapacity first
+        nextRobotCount = if noRobotAssigned first
                             then robotCount - 1
                             else robotCount
-     in totalTime nextCashiers nextFilledCashiers nextRobotCount (bitCount - 1)
+     in totalTime nextCashiers nextFilledCashiers ignoredCashiers nextRobotCount (bitCount - 1)
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
@@ -64,7 +95,7 @@ solve' testCasesLeft nrOfTestCases = do
     let (robotCount:bitCount:cashierCount:_) = map read $ words line
     cashiers <- readCashiers cashierCount
     let sortedCashiers = sortBy
-    let solution = show $ totalTime cashiers [] robotCount bitCount
+    let solution = show $ totalTime cashiers [] [] robotCount bitCount
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
