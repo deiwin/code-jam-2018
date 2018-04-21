@@ -88,8 +88,8 @@ solve' testCasesLeft nrOfTestCases = do
     line <- await
     let (robotCount:bitCount:cashierCount:_) = map read $ words line
     cashiers <- readCashiers cashierCount
-    let sortedCashiers = sortBy
-    let solution = show $ totalTime cashiers [] [] robotCount bitCount
+    let sortedCashiers = sortCashiersByLeastTimeForBit cashiers
+    let solution = show $ totalTime sortedCashiers [] [] robotCount bitCount
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
