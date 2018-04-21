@@ -7,11 +7,13 @@ import Data.List (sortBy, insertBy, minimumBy, delete)
 import Data.Ord (comparing)
 import Data.Monoid ((<>))
 
--- TODO use Integer where needed
-data Cashier = Cashier { timeWithNextBit :: Int
-                       , bitCapacity :: Int
-                       , maxBits :: Int
-                       , scanTime :: Int
+largeNumber :: Integer
+largeNumber = 10 ^ 9 + 1
+
+data Cashier = Cashier { timeWithNextBit :: Integer
+                       , bitCapacity :: Integer
+                       , maxBits :: Integer
+                       , scanTime :: Integer
                        } deriving (Show, Eq)
 
 readCashiers :: Monad m => Int -> Pipe String String m [Cashier]
@@ -35,13 +37,13 @@ sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit <> comparing 
 noRobotAssigned :: Cashier -> Bool
 noRobotAssigned cashier = bitCapacity cashier == maxBits cashier
 
-bestWithNBits :: Int -> [Cashier] -> Cashier
+bestWithNBits :: Integer -> [Cashier] -> Cashier
 bestWithNBits bits = minimumBy $ comparing (\x ->
     if bitCapacity x < bits
-       then maxBound
+       then largeNumber
        else timeWithNextBit x + scanTime x * (bits - 1))
 
-totalTime :: [Cashier] -> [Cashier] -> [Cashier] -> Int -> Int -> Int
+totalTime :: [Cashier] -> [Cashier] -> [Cashier] -> Integer -> Integer -> Integer
 -- Robot counts shouldn't fall below 0
 totalTime cashiers filledCashiers ignoredCashiers robotCount bitCount
   | robotCount < 0 = error "uh oh"
@@ -105,7 +107,7 @@ solve' testCasesLeft nrOfTestCases = do
     let (robotCount:bitCount:cashierCount:_) = map read $ words line
     cashiers <- readCashiers cashierCount
     let sortedCashiers = sortCashiersByLeastTimeForBit cashiers
-    let solution = show $ totalTime sortedCashiers [] [] robotCount bitCount
+    let solution = show $ totalTime sortedCashiers [] [] (fromIntegral robotCount) (fromIntegral bitCount)
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 

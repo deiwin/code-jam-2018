@@ -51,14 +51,14 @@ unitTests = testGroup "Unit tests"
           [cashierWithTime 2, (cashierWithTime 2){scanTime=1}, cashierWithTime 4]
   ]
 
-cashierWithTime :: Int -> Cashier
+cashierWithTime :: Integer -> Cashier
 cashierWithTime time = Cashier { timeWithNextBit=time
                                , bitCapacity=0
                                , maxBits = 0
                                , scanTime=0
                                }
 
-makePutSortedByLeastTimeForBitTest :: (Int, [Int], [Int]) -> TestTree
+makePutSortedByLeastTimeForBitTest :: (Integer, [Integer], [Integer]) -> TestTree
 makePutSortedByLeastTimeForBitTest (val, list, newList) = testCase (show val ++ " into " ++ show list) $
     putSortedByLeastTimeForBit  (cashierWithTime val) (map cashierWithTime list) @?=
         map cashierWithTime newList
