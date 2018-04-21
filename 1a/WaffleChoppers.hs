@@ -1,7 +1,3 @@
-module WaffleChoppers where
-
-import Pipes
-import qualified Pipes.Prelude as Pipes
 import Control.Monad
 import Control.Applicative
 import Data.Bool
@@ -16,10 +12,10 @@ fst3 (x, _, _) = x
 hasChip :: Char -> Bool
 hasChip = (== '@')
 
-readGrid :: Monad m => Int -> Pipe String String m Grid
+readGrid :: Int -> IO Grid
 readGrid rowsToRead =
     foldM fn [] [1..rowsToRead]
-        where fn acc _ = do line <- await
+        where fn acc _ = do line <- getLine
                             return (map (bool 0 1 . hasChip) line:acc)
 
 chipsInColumns :: Int -> Grid -> [Int]
@@ -87,21 +83,18 @@ canCut grid rows columns hCuts vCuts =
          maybe False (canDistribute chipsPerPiece)
              (reduceGridToPieces inRows chipsPerHSlice inColumns chipsPerVSlice grid)
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
+solve' :: Int -> Int -> IO ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    line <- await
+    line <- getLine
     let (rows:columns:hCuts:vCuts:_) = map read $ words line
     grid <- readGrid rows
     let solution = bool "IMPOSSIBLE" "POSSIBLE" $ canCut grid rows columns hCuts vCuts
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-solve :: Monad m => Pipe String String m ()
-solve = do
-    nrOfTestCasesStr <- await
+main :: IO ()
+main = do
+    nrOfTestCasesStr <- getLine
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
-
-main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
