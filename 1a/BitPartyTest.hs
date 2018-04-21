@@ -47,6 +47,8 @@ unitTests = testGroup "Unit tests"
           [cashierWithTime 2, cashierWithTime 3, cashierWithTime 4]
       sortCashiersByLeastTimeForBit [cashierWithTime 4, cashierWithTime 3, cashierWithTime 2] @?=
           [cashierWithTime 2, cashierWithTime 3, cashierWithTime 4]
+      sortCashiersByLeastTimeForBit [cashierWithTime 4, (cashierWithTime 2){scanTime=1}, cashierWithTime 2] @?=
+          [cashierWithTime 2, (cashierWithTime 2){scanTime=1}, cashierWithTime 4]
   ]
 
 cashierWithTime :: Int -> Cashier

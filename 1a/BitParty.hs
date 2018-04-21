@@ -5,6 +5,7 @@ import qualified Pipes.Prelude as Pipes
 import Control.Monad (foldM)
 import Data.List (sortBy, insertBy)
 import Data.Ord (comparing)
+import Data.Monoid ((<>))
 
 -- TODO use Integer where needed
 data Cashier = Cashier { timeWithNextBit :: Int
@@ -26,10 +27,10 @@ readCashiers rowsToRead =
                                                   }:acc
 
 putSortedByLeastTimeForBit :: Cashier -> [Cashier] -> [Cashier]
-putSortedByLeastTimeForBit = insertBy $ comparing timeWithNextBit
+putSortedByLeastTimeForBit = insertBy $ comparing timeWithNextBit <> comparing scanTime
 
 sortCashiersByLeastTimeForBit :: [Cashier] -> [Cashier]
-sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit
+sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit <> comparing scanTime
 
 noRobotAssigned :: Cashier -> Bool
 noRobotAssigned cashier = bitCapacity cashier == maxBits cashier
