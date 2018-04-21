@@ -3,7 +3,7 @@ module BitParty where
 import Pipes
 import qualified Pipes.Prelude as Pipes
 import Control.Monad (foldM)
-import Data.List (sortBy)
+import Data.List (sortBy, insertBy)
 import Data.Ord (comparing)
 
 -- TODO use Integer where needed
@@ -25,15 +25,8 @@ readCashiers rowsToRead =
                                                   , scanTime=scanTime
                                                   }:acc
 
-putSortedBy :: (a -> a -> Ordering) -> a -> [a] -> [a]
-putSortedBy _ val [] = [val]
-putSortedBy pred val (first:rest) =
-    let ord = pred val first
-     in case ord of GT -> first:putSortedBy pred val rest
-                    _ -> val:first:rest
-
 putSortedByLeastTimeForBit :: Cashier -> [Cashier] -> [Cashier]
-putSortedByLeastTimeForBit = putSortedBy $ comparing timeWithNextBit
+putSortedByLeastTimeForBit = insertBy $ comparing timeWithNextBit
 
 sortCashiersByLeastTimeForBit :: [Cashier] -> [Cashier]
 sortCashiersByLeastTimeForBit = sortBy $ comparing timeWithNextBit
@@ -81,7 +74,7 @@ totalTime (first:rest) filledCashiers ignoredCashiers robotCount bitCount =
                           then rest
                           else putSortedByLeastTimeForBit updatedCashier rest
         nextFilledCashiers = if bitCapacity updatedCashier == 0
-                                then putSortedBy (comparing maxBits) updatedCashier filledCashiers
+                                then insertBy (comparing maxBits) updatedCashier filledCashiers
                                 else filledCashiers
         nextRobotCount = if noRobotAssigned first
                             then robotCount - 1
