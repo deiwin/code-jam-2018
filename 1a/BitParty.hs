@@ -49,7 +49,7 @@ solve' testCasesLeft nrOfTestCases = do
     line <- await
     let (robotCount:bitCount:cashierCount:_) = map read $ words line
     cashiers <- readCashiers cashierCount
-    let solution = show $ binarySearch (\x -> canSolve x robotCount (fromIntegral bitCount) cashiers) 0 (10^9)
+    let solution = show $ binarySearch (\x -> canSolve x robotCount (fromIntegral bitCount) cashiers) 0 (10^18 + 10^9)
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
