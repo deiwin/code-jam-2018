@@ -1,7 +1,3 @@
-module EdgyBaking where
-
-import Pipes
-import qualified Pipes.Prelude as Pipes
 import Control.Monad
 import Control.Arrow ((***))
 import Numeric
@@ -10,10 +6,10 @@ import Data.List
 type Range = (Double, Double)
 type Cookie = (Int, Int)
 
-readCookies :: Monad m => Int -> Pipe String String m [Cookie]
+readCookies :: Int -> IO [Cookie]
 readCookies rowsToRead =
     foldM fn [] [1..rowsToRead]
-        where fn acc id = do line <- await
+        where fn acc id = do line <- getLine
                              let (width:height:_) = map read $ words line
                               in return $ (width, height):acc
 
@@ -81,21 +77,18 @@ solveCase cookies goal =
         maximized = findMaxUnder maximzationTarget $ rangesForCookies cookies
      in fromIntegral initialPerimeter + maximized
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
+solve' :: Int -> Int -> IO ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    line <- await
+    line <- getLine
     let (cookieCount:goal:_) = map read $ words line
     cookies <- readCookies cookieCount
     let solution = showFFloat (Just 6) (solveCase cookies goal) ""
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-solve :: Monad m => Pipe String String m ()
-solve = do
-    nrOfTestCasesStr <- await
+main :: IO ()
+main = do
+    nrOfTestCasesStr <- getLine
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
-
-main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
