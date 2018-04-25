@@ -5,6 +5,7 @@ import qualified Pipes.Prelude as Pipes
 import Control.Monad
 import Control.Arrow ((***))
 import Numeric
+import Data.List
 
 type Range = (Double, Double)
 type Cookie = (Int, Int)
@@ -39,16 +40,46 @@ below (low, _) point = point' < low
 perimeter :: Cookie -> Int
 perimeter (width, height) = 2 * (width + height)
 
--- Todo if above range
-cutUntilWithinRange :: [Cookie] -> Range -> Int -> Double
-cutUntilWithinRange [] range goal = snd range
-cutUntilWithinRange (first:rest) range goal =
-    let newRange = add range (addedRange first)
-     in if within newRange goal
-           then fromIntegral goal
-           else if below newRange goal
-           then snd range
-           else cutUntilWithinRange rest newRange goal
+overlap :: Range -> Range -> Bool
+overlap (minA, maxA) (minB, maxB) = maxB >= minA && minB <= maxA
+
+merge :: Range -> Range -> Range
+merge (minA, maxA) (minB, maxB) = (min minA minB, max maxA maxB)
+
+mergeAll' :: Range -> [Range] -> [Range]
+mergeAll' range [] = [range]
+mergeAll' range (first:rest)
+  | overlap range first = merge range first:rest
+  | otherwise = range:first:rest
+mergeAll :: [Range] -> [Range]
+mergeAll = foldr mergeAll' []
+
+addToAll' :: Range -> Range -> [Range] -> [Range]
+addToAll' rangeToAdd currentRange rest = currentRange:insert (add rangeToAdd currentRange) rest
+addToAll :: Range -> [Range] -> [Range]
+addToAll range = foldr (addToAll' range) []
+
+addAndMergeAll :: [Range] -> Range -> [Range]
+addAndMergeAll acc range = mergeAll $ insert range $ addToAll range acc
+
+rangesForCookies :: [Cookie] -> [Range]
+rangesForCookies = foldl' addAndMergeAll [] . map addedRange
+
+findMaxUnder' :: Double -> Int -> [Range] -> Double
+findMaxUnder' mem target [] = mem
+findMaxUnder' mem target (first:rest)
+  | within first target = fromIntegral target
+  | below first target = mem
+  | otherwise = findMaxUnder' (snd first) target rest
+findMaxUnder :: Int -> [Range] -> Double
+findMaxUnder = findMaxUnder' 0
+
+solveCase :: [Cookie] -> Int -> Double
+solveCase cookies goal =
+    let initialPerimeter = sum $ map perimeter cookies
+        maximzationTarget = goal - initialPerimeter
+        maximized = findMaxUnder maximzationTarget $ rangesForCookies cookies
+     in fromIntegral initialPerimeter + maximized
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
@@ -56,9 +87,7 @@ solve' testCasesLeft nrOfTestCases = do
     line <- await
     let (cookieCount:goal:_) = map read $ words line
     cookies <- readCookies cookieCount
-    let initialPerimeter = fromIntegral $ sum $ map perimeter cookies
-    let initialRange = (initialPerimeter, initialPerimeter)
-    let solution = showFFloat (Just 6) (cutUntilWithinRange cookies initialRange goal) ""
+    let solution = showFFloat (Just 6) (solveCase cookies goal) ""
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
