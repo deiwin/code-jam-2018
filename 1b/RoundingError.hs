@@ -1,8 +1,3 @@
-module RoundingError where
-
-import Pipes
-import qualified Pipes.Prelude as Pipes
-
 import Data.List
 import Data.Ord
 
@@ -29,14 +24,14 @@ quotUp a b =
     let (res, rem) = quotRem a b
      in if rem == 0 then res else res + 1
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
+solve' :: Int -> Int -> IO ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    line <- await
+    line <- getLine
     let (peopleCount:languageCount:_) = map read $ words line
     let (perPersonBaseline, perPersonNumerator) = quotRem 100 peopleCount
     let baseline = peopleCount * perPersonBaseline
-    line2 <- await
+    line2 <- getLine
     let currentVotes = map read $ words line2
     let votedPeople = sum currentVotes
     let initialRemainingPeople = peopleCount - votedPeople
@@ -48,14 +43,11 @@ solve' testCasesLeft nrOfTestCases = do
     let solution = if perPersonNumerator == 0
         then baseline
         else baseline + additionalPoints + addFromRemPeople
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ show solution
+    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ show solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-solve :: Monad m => Pipe String String m ()
-solve = do
-    nrOfTestCasesStr <- await
+main :: IO ()
+main = do
+    nrOfTestCasesStr <- getLine
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
-
-main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
