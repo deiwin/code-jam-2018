@@ -28,3 +28,5 @@ extra-deps:
 - exceptions-0.8.3
 - mmorph-1.1.0
 - void-0.7.2
+- call-stack-0.1.0
+- semigroups-0.18.4
