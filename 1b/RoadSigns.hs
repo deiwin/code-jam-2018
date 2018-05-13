@@ -23,10 +23,10 @@ type PossibleCombination = (PossibleTown, PossibleTown)
 type Acc = (Int, Int)
 
 possibleM :: Sign -> Int
-possibleM sign = fromSignfield sign + eastToM sign
+possibleM = sum . ([fromSignfield, eastToM] <*>) . return
 
 possibleN :: Sign -> Int
-possibleN sign = fromSignfield sign - westToN sign
+possibleN = sum . ([fromSignfield, negate . westToN] <*>) . return
 
 matches :: PossibleTown -> Int -> Bool
 matches (Left a) b = a == b
