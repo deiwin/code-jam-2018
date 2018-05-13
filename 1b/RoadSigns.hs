@@ -1,9 +1,16 @@
+module RoadSigns where
+
+import Pipes
+import qualified Pipes.Prelude as Pipes
+
 import Data.List
 import Data.Either
 import Data.Maybe
 import Control.Monad
 import Data.Set (Set)
 import qualified Data.Set as S
+
+import Debug.Trace
 
 data Sign = Sign { fromSignfield :: Int
                  , eastToM :: Int
@@ -63,17 +70,21 @@ checkSign (possibleCombinations, acc) sign =
         newAcc = addMax curLength acc
      in (newCombinations, newAcc)
 
-solve' :: Int -> Int -> IO ()
+solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    roadSignCount <- read <$> getLine
-    signs <- map ((\(d:a:b:_) -> Sign d a b) . map read . words) <$> replicateM roadSignCount getLine
+    trace "new case" $ return ()
+    roadSignCount <- read <$> await
+    signs <- map ((\(d:a:b:_) -> Sign d a b) . map read . words) <$> replicateM roadSignCount await
     let solution = unwords $ map show $ tupleToList $ snd $ foldl' checkSign ([], (0, 0)) signs
-    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-main :: IO ()
-main = do
-    nrOfTestCasesStr <- getLine
+solve :: Monad m => Pipe String String m ()
+solve = do
+    nrOfTestCasesStr <- await
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
+
+main :: IO ()
+main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
