@@ -10,8 +10,6 @@ import Control.Monad
 import Data.Set (Set)
 import qualified Data.Set as S
 
-import Debug.Trace
-
 data Sign = Sign { fromSignfield :: Int
                  , eastToM :: Int
                  , westToN :: Int
@@ -73,7 +71,6 @@ checkSign (possibleCombinations, acc) sign =
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    trace "new case" $ return ()
     roadSignCount <- read <$> await
     signs <- map ((\(d:a:b:_) -> Sign d a b) . map read . words) <$> replicateM roadSignCount await
     let solution = unwords $ map show $ tupleToList $ snd $ foldl' checkSign ([], (0, 0)) signs
