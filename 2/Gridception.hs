@@ -32,8 +32,8 @@ expectedColor quadrants (pivotI, pivotJ) (i, j)
   | j <= pivotJ = quadrants!!2
   | otherwise = quadrants!!3
 
-markNeighbouringMatches :: (MIx -> Bool) -> Table -> Table
-markNeighbouringMatches matches table = accum (flip const) table $ do
+neighbourMatchesAccs :: (MIx -> Bool) -> Table -> [(MIx, Char)]
+neighbourMatchesAccs matches table = do
     ix <- range $ bounds table
     guard $ table!ix == '.'
     let (i, j) = ix
@@ -45,10 +45,10 @@ markNeighbouringMatches matches table = accum (flip const) table $ do
 
 markAllMatches :: (MIx -> Bool) -> Table -> Table
 markAllMatches matches table =
-    let markedTable = markNeighbouringMatches matches table
- in if markedTable == table
+    let matchAccs = neighbourMatchesAccs matches table
+ in if null matchAccs
        then table
-       else markAllMatches matches markedTable
+       else markAllMatches matches $ accum (flip const) table matchAccs
 
 countMatches' :: Table -> Int
 countMatches' table = foldl' (\s ix -> if table!ix == '.' then s + 1 else s) 0 $ range $ bounds table
