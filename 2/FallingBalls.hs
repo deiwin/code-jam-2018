@@ -1,8 +1,3 @@
-module FallingBalls where
-
-import Pipes
-import qualified Pipes.Prelude as Pipes
-
 import Data.Array.IArray
 import Data.List
 import Control.Monad
@@ -34,26 +29,23 @@ splitInto _ [] = []
 splitInto columns list = let (head, rest) = splitAt columns list
                   in head:splitInto columns rest
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
+solve' :: Int -> Int -> IO ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    colCount <- read <$> await
-    ballsInCols <- map read . words <$> await
+    colCount <- read <$> getLine
+    ballsInCols <- map read . words <$> getLine
     let resColIdxs = reverse $ foldl' countRows [] (zip [0..] ballsInCols)
     let resColDifferences = uncurry (-) <$> zip resColIdxs [0..]
     let rows = 1 + maximum (map abs resColDifferences)
     let solution = if head ballsInCols == 0 || last ballsInCols == 0
                       then "IMPOSSIBLE"
                       else show rows
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
-    when (solution /= "IMPOSSIBLE") $ traverse_ yield $ splitInto colCount $ toList $ createGrid resColDifferences rows
+    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    when (solution /= "IMPOSSIBLE") $ traverse_ putStrLn $ splitInto colCount $ toList $ createGrid resColDifferences rows
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-solve :: Monad m => Pipe String String m ()
-solve = do
-    nrOfTestCasesStr <- await
+main :: IO ()
+main = do
+    nrOfTestCasesStr <- getLine
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
-
-main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
