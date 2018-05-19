@@ -1,8 +1,3 @@
-module Gridception where
-
-import Pipes
-import qualified Pipes.Prelude as Pipes
-
 import Data.List
 import Data.Array.IArray
 import Control.Monad
@@ -69,22 +64,19 @@ checkTable table = maximum $ do
     searchRootIx <- range b
     return $ countMatches table searchRootIx matches
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
+solve' :: Int -> Int -> IO ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    (rows:cols:_) <- map read . words <$> await
-    table <- parseTable <$> replicateM rows await
+    (rows:cols:_) <- map read . words <$> getLine
+    table <- parseTable <$> replicateM rows getLine
     let solution = show $ if rows == 1 && cols == 1
                              then 1
                              else checkTable table
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-solve :: Monad m => Pipe String String m ()
-solve = do
-    nrOfTestCasesStr <- await
+main :: IO ()
+main = do
+    nrOfTestCasesStr <- getLine
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
-
-main :: IO ()
-main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
