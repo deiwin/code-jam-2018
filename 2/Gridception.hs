@@ -71,7 +71,6 @@ checkTable table = maximum $ do
     let rowCount = fst $ snd b
     let colCount = snd $ snd b
     pivotIx <- range b
-    guard $ fst pivotIx /= rowCount && snd pivotIx /= colCount
     colorQuadrants <- combinations "WB" 4
     let matches ix = table!ix == expectedColor colorQuadrants pivotIx ix
     return $ largestMatchingSubset table matches
@@ -81,9 +80,7 @@ solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
     (rows:cols:_) <- map read . words <$> await
     table <- parseTable <$> replicateM rows await
-    let solution = show $ if rows == 1 && cols == 1
-                             then 1
-                             else checkTable table
+    let solution = show $ checkTable table
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
