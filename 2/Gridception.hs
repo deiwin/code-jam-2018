@@ -7,6 +7,9 @@ import Data.List
 import Data.Array.IArray
 import Control.Monad
 
+import Data.Set (Set)
+import qualified Data.Set as S
+
 type MBounds = ((Int, Int), (Int, Int))
 type MIx = (Int, Int)
 
@@ -32,30 +35,35 @@ expectedColor quadrants (pivotI, pivotJ) (i, j)
   | j <= pivotJ = quadrants!!2
   | otherwise = quadrants!!3
 
-neighbourMatchesAccs :: (MIx -> Bool) -> Table -> [(MIx, Char)]
-neighbourMatchesAccs matches table = do
-    ix <- range $ bounds table
-    guard $ table!ix == '.'
-    let (i, j) = ix
-    (di, dj) <- [(-1, 0), (1, 0), (0, -1), (0, 1)]
-    let newIx = (i+di, j+dj)
-    guard $ inRange (bounds table) newIx && table!newIx /= '.' && matches newIx
-    return (newIx, '.')
+findConnected' bounds (i, j) (found, available) (di, dj) =
+    let ix = (i + di, j + dj)
+        same = (found, available)
+ in if not (inRange bounds (i + di, j + dj))
+       then same
+       else let newAvailable = S.delete ix available
+    in if S.size newAvailable == S.size available
+          then same
+          else let (additionalFound, remaining) = findConnected bounds ix newAvailable
+       in (S.union found additionalFound, remaining)
+findConnected :: MBounds -> MIx -> Set MIx -> (Set MIx, Set MIx)
+findConnected bounds ix availableIxs = foldl' (findConnected' bounds ix) (S.singleton ix, availableIxs) [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
+connectedSubsets :: MBounds -> Set MIx -> [Set MIx]
+connectedSubsets bounds ixs
+  | null ixs = []
+  | otherwise = subset:connectedSubsets bounds remaining
+  where (subset, remaining) = findConnected bounds start withoutStart
+        (start, withoutStart) = S.deleteFindMin ixs
 
-markAllMatches :: (MIx -> Bool) -> Table -> Table
-markAllMatches matches table =
-    let matchAccs = neighbourMatchesAccs matches table
- in if null matchAccs
-       then table
-       else markAllMatches matches $ accum (flip const) table matchAccs
+matchingIxs :: (MIx -> Bool) -> MBounds -> Set MIx
+matchingIxs matches bounds = S.fromDistinctAscList $ filter matches $ range bounds
 
-countMatches' :: Table -> Int
-countMatches' table = foldl' (\s ix -> if table!ix == '.' then s + 1 else s) 0 $ range $ bounds table
-countMatches :: Table -> MIx -> (MIx -> Bool) -> Int
-countMatches table searchRootIx matches = if matches searchRootIx
-                                             then countMatches' $ markAllMatches matches $ table//[(searchRootIx, '.')]
-                                             else 0
+largestMatchingSubset :: Table -> (MIx -> Bool) -> Int
+largestMatchingSubset table matches = if null subsetSizes
+                                         then 0
+                                         else maximum subsetSizes
+    where b = bounds table
+          subsetSizes = map S.size $ connectedSubsets b $ matchingIxs matches b
 
 checkTable :: Table -> Int
 checkTable table = maximum $ do
@@ -66,8 +74,7 @@ checkTable table = maximum $ do
     guard $ fst pivotIx /= rowCount && snd pivotIx /= colCount
     colorQuadrants <- combinations "WB" 4
     let matches ix = table!ix == expectedColor colorQuadrants pivotIx ix
-    searchRootIx <- range b
-    return $ countMatches table searchRootIx matches
+    return $ largestMatchingSubset table matches
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
