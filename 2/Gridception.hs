@@ -7,8 +7,7 @@ import Data.List
 import Data.Array.IArray
 import Control.Monad
 
-import Data.Set (Set)
-import qualified Data.Set as S
+import Data.Graph (stronglyConnComp, flattenSCC)
 
 type MBounds = ((Int, Int), (Int, Int))
 type MIx = (Int, Int)
@@ -35,35 +34,14 @@ expectedColor quadrants (pivotI, pivotJ) (i, j)
   | j <= pivotJ = quadrants!!2
   | otherwise = quadrants!!3
 
-findConnected' bounds (i, j) (found, available) (di, dj) =
-    let ix = (i + di, j + dj)
-        same = (found, available)
- in if not (inRange bounds (i + di, j + dj))
-       then same
-       else let newAvailable = S.delete ix available
-    in if S.size newAvailable == S.size available
-          then same
-          else let (additionalFound, remaining) = findConnected bounds ix newAvailable
-       in (S.union found additionalFound, remaining)
-findConnected :: MBounds -> MIx -> Set MIx -> (Set MIx, Set MIx)
-findConnected bounds ix availableIxs = foldl' (findConnected' bounds ix) (S.singleton ix, availableIxs) [(-1, 0), (1, 0), (0, -1), (0, 1)]
-
-connectedSubsets :: MBounds -> Set MIx -> [Set MIx]
-connectedSubsets bounds ixs
-  | null ixs = []
-  | otherwise = subset:connectedSubsets bounds remaining
-  where (subset, remaining) = findConnected bounds start withoutStart
-        (start, withoutStart) = S.deleteFindMin ixs
-
-matchingIxs :: (MIx -> Bool) -> MBounds -> Set MIx
-matchingIxs matches bounds = S.fromDistinctAscList $ filter matches $ range bounds
+addIx :: MIx -> MIx -> MIx
+addIx (i, j) (di, dj) = (i + di, j + dj)
 
 largestMatchingSubset :: Table -> (MIx -> Bool) -> Int
-largestMatchingSubset table matches = if null subsetSizes
-                                         then 0
-                                         else maximum subsetSizes
-    where b = bounds table
-          subsetSizes = map S.size $ connectedSubsets b $ matchingIxs matches b
+largestMatchingSubset table matches = maximum (0:connCompSizes)
+    where connCompSizes = map (length . flattenSCC) $ stronglyConnComp graph
+          graph = map createNode $ filter matches $ range $ bounds table
+          createNode ix = ((), ix, map (addIx ix) [(-1, 0), (1, 0), (0, -1), (0, 1)])
 
 checkTable :: Table -> Int
 checkTable table = maximum $ do
