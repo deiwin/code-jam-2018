@@ -14,11 +14,9 @@ type MIx = (Int, Int)
 
 type Table = Array MIx Char
 
-parseTable :: [String] -> Table
-parseTable rows = array bounds assocList
-    where colCount = length $ head rows
-          rowCount = length rows
-          bounds = ((1, 1), (rowCount, colCount))
+parseTable :: Int -> Int -> [String] -> Table
+parseTable rowCount colCount rows = array bounds assocList
+    where bounds = ((1, 1), (rowCount, colCount))
           assocList = do
               (i, row) <- zip [1..] rows
               (j, char) <- zip [1..] row
@@ -54,7 +52,7 @@ solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
     (rows:cols:_) <- map read . words <$> await
-    table <- parseTable <$> replicateM rows await
+    table <- parseTable rows cols <$> replicateM rows await
     let solution = show $ checkTable table
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
