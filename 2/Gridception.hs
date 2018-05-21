@@ -45,10 +45,7 @@ largestMatchingSubset table matches = maximum (0:connCompSizes)
 
 checkTable :: Table -> Int
 checkTable table = maximum $ do
-    let b = bounds table
-    let rowCount = fst $ snd b
-    let colCount = snd $ snd b
-    pivotIx <- range b
+    pivotIx <- range $ bounds table
     colorQuadrants <- combinations "WB" 4
     let matches ix = table!ix == expectedColor colorQuadrants pivotIx ix
     return $ largestMatchingSubset table matches
