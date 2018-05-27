@@ -35,25 +35,29 @@ expectedColor quadrants (pivotI, pivotJ) (i, j)
 addIx :: MIx -> MIx -> MIx
 addIx (i, j) (di, dj) = (i + di, j + dj)
 
-largestMatchingSubset :: Table -> (MIx -> Bool) -> Int
-largestMatchingSubset table matches = maximum (0:connCompSizes)
+largestMatchingSubset :: Table -> Int -> (MIx -> Bool) -> Int
+largestMatchingSubset table m matches = maxUpTo m (0:connCompSizes)
     where connCompSizes = map (length . flattenSCC) $ stronglyConnComp graph
           graph = map createNode $ filter matches $ indices table
           createNode ix = ((), ix, map (addIx ix) [(-1, 0), (1, 0), (0, -1), (0, 1)])
 
-checkTable :: Table -> Int
-checkTable table = maximum $ do
+checkTable :: Table -> Int -> Int
+checkTable table m = maxUpTo m $ do
     pivotIx <- indices table
     colorQuadrants <- combinations "WB" 4
     let matches ix = table!ix == expectedColor colorQuadrants pivotIx ix
-    return $ largestMatchingSubset table matches
+    return $ largestMatchingSubset table m matches
+
+maxUpTo :: Ord a => a -> [a] -> a
+maxUpTo m xs = case span (< m) xs of (_, []) -> maximum xs
+                                     _ -> m
 
 solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
     (rows:cols:_) <- map read . words <$> await
     table <- parseTable rows cols <$> replicateM rows await
-    let solution = show $ checkTable table
+    let solution = show $ checkTable table (rows * cols)
     yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 

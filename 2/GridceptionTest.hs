@@ -66,4 +66,6 @@ unitTests = testGroup "Unit tests"
                     , ((2, 3), 'B')
                     , ((2, 4), 'B')
                     ]
+    , testCase "maxUpTo" $
+        maxUpTo 5 [1..] @?= 5
   ]
