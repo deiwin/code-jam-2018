@@ -1,3 +1,8 @@
+module Gridception where
+
+import Pipes
+import qualified Pipes.Prelude as Pipes
+
 import Data.List
 import Data.Array.IArray
 import Control.Monad
@@ -47,17 +52,20 @@ maxUpTo :: Ord a => a -> [a] -> a
 maxUpTo m xs = case span (< m) xs of (_, []) -> maximum xs
                                      _ -> m
 
-solve' :: Int -> Int -> IO ()
+solve' :: Monad m => Int -> Int -> Pipe String String m ()
 solve' 0 nrOfTestCases = return ()
 solve' testCasesLeft nrOfTestCases = do
-    (rows:cols:_) <- map read . words <$> getLine
-    table <- parseTable rows cols <$> replicateM rows getLine
+    (rows:cols:_) <- map read . words <$> await
+    table <- parseTable rows cols <$> replicateM rows await
     let solution = show $ checkTable table (rows * cols)
-    putStrLn $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
     solve' (testCasesLeft - 1)  nrOfTestCases
 
-main :: IO ()
-main = do
-    nrOfTestCasesStr <- getLine
+solve :: Monad m => Pipe String String m ()
+solve = do
+    nrOfTestCasesStr <- await
     let nrOfTestCases = read nrOfTestCasesStr
      in solve' nrOfTestCases nrOfTestCases
+
+main :: IO ()
+main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
