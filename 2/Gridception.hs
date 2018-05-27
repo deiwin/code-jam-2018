@@ -38,12 +38,12 @@ addIx (i, j) (di, dj) = (i + di, j + dj)
 largestMatchingSubset :: Table -> (MIx -> Bool) -> Int
 largestMatchingSubset table matches = maximum (0:connCompSizes)
     where connCompSizes = map (length . flattenSCC) $ stronglyConnComp graph
-          graph = map createNode $ filter matches $ range $ bounds table
+          graph = map createNode $ filter matches $ indices table
           createNode ix = ((), ix, map (addIx ix) [(-1, 0), (1, 0), (0, -1), (0, 1)])
 
 checkTable :: Table -> Int
 checkTable table = maximum $ do
-    pivotIx <- range $ bounds table
+    pivotIx <- indices table
     colorQuadrants <- combinations "WB" 4
     let matches ix = table!ix == expectedColor colorQuadrants pivotIx ix
     return $ largestMatchingSubset table matches
