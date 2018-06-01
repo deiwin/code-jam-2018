@@ -3,7 +3,6 @@ module Gridception where
 import Pipes
 import qualified Pipes.Prelude as Pipes
 
-import Data.List
 import Data.Array.IArray
 import Control.Monad
 import Data.Foldable
