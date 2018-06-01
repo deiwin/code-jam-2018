@@ -21,8 +21,8 @@ countRows topCols (colIdx, ballsInCol) = replicate ballsInCol colIdx ++ topCols
 incrementsForDelta :: Int -> (Char, [Int])
 incrementsForDelta diff
   | diff == 0 = ('.', [])
-  | diff > 0 = ('\\', map (+ (-1)) [1..diff])
-  | otherwise = ('/', map (+ 1) $ reverse [diff..(-1)])
+  | diff > 0 = ('\\', [0..(diff - 1)])
+  | otherwise = ('/', reverse [(diff + 1)..0])
 
 createGrid :: [Int] -> Int -> Table
 createGrid resColDifferences rows = accumArray (flip const) initial bounds assocList
