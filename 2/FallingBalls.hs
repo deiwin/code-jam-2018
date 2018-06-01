@@ -18,14 +18,20 @@ type Table = Array MIx Char
 countRows :: Acc -> (Int, Int) -> Acc
 countRows topCols (colIdx, ballsInCol) = replicate ballsInCol colIdx ++ topCols
 
+incrementsForDelta :: Int -> (Char, [Int])
+incrementsForDelta diff
+  | diff == 0 = ('.', [])
+  | diff > 0 = ('\\', map (+ (-1)) [1..diff])
+  | otherwise = ('/', map (+ 1) $ reverse [diff..(-1)])
+
 createGrid :: [Int] -> Int -> Table
-createGrid resColDifferences rows = accumArray (\a b -> b) initial bounds assocList
+createGrid resColDifferences rows = accumArray (flip const) initial bounds assocList
     where cols = length resColDifferences
           initial = '.'
           bounds = ((0, 0), (rows - 1, cols - 1))
           assocList = do
               (j, diff) <- zip [0..] resColDifferences
-              let (c, diffs) | diff == 0 = ('.', []) | diff > 0 = ('\\', map (+ (-1)) [1..diff]) | otherwise = ('/', map (+ 1) $ reverse [diff..(-1)])
+              let (c, diffs) = incrementsForDelta diff
               (i, jd) <- zip [0..] diffs
               return ((i, j + jd), c)
 
