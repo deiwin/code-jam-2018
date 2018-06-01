@@ -34,9 +34,8 @@ splitInto _ [] = []
 splitInto columns list = let (head, rest) = splitAt columns list
                   in head:splitInto columns rest
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
-solve' 0 nrOfTestCases = return ()
-solve' testCasesLeft nrOfTestCases = do
+solveCase :: Monad m => Int -> Pipe String String m ()
+solveCase testCase = do
     colCount <- read <$> await
     ballsInCols <- map read . words <$> await
     let resColIdxs = reverse $ foldl' countRows [] (zip [0..] ballsInCols)
@@ -45,15 +44,13 @@ solve' testCasesLeft nrOfTestCases = do
     let solution = if head ballsInCols == 0 || last ballsInCols == 0
                       then "IMPOSSIBLE"
                       else show rows
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
+    yield $ "Case #" ++ show testCase ++ ": " ++ solution
     when (solution /= "IMPOSSIBLE") $ traverse_ yield $ splitInto colCount $ toList $ createGrid resColDifferences rows
-    solve' (testCasesLeft - 1)  nrOfTestCases
 
 solve :: Monad m => Pipe String String m ()
 solve = do
-    nrOfTestCasesStr <- await
-    let nrOfTestCases = read nrOfTestCasesStr
-     in solve' nrOfTestCases nrOfTestCases
+    nrOfTestCases <- read <$> await
+    traverse_ solveCase [1..nrOfTestCases]
 
 main :: IO ()
 main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn

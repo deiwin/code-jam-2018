@@ -6,6 +6,7 @@ import qualified Pipes.Prelude as Pipes
 import Data.List
 import Data.Array.IArray
 import Control.Monad
+import Data.Foldable
 
 import Data.Graph (stronglyConnComp, flattenSCC)
 
@@ -52,20 +53,17 @@ maxUpTo :: Ord a => a -> [a] -> a
 maxUpTo m xs = case span (< m) xs of (_, []) -> maximum xs
                                      _ -> m
 
-solve' :: Monad m => Int -> Int -> Pipe String String m ()
-solve' 0 nrOfTestCases = return ()
-solve' testCasesLeft nrOfTestCases = do
+solveCase :: Monad m => Int -> Pipe String String m ()
+solveCase testCase = do
     (rows:cols:_) <- map read . words <$> await
     table <- parseTable rows cols <$> replicateM rows await
     let solution = show $ checkTable table (rows * cols)
-    yield $ "Case #" ++ show (nrOfTestCases - testCasesLeft + 1) ++ ": " ++ solution
-    solve' (testCasesLeft - 1)  nrOfTestCases
+    yield $ "Case #" ++ show testCase ++ ": " ++ solution
 
 solve :: Monad m => Pipe String String m ()
 solve = do
-    nrOfTestCasesStr <- await
-    let nrOfTestCases = read nrOfTestCasesStr
-     in solve' nrOfTestCases nrOfTestCases
+    nrOfTestCases <- read <$> await
+    traverse_ solveCase [1..nrOfTestCases]
 
 main :: IO ()
 main = runEffect $ Pipes.stdinLn >-> solve >-> Pipes.stdoutLn
