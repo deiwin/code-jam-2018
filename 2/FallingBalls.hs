@@ -39,10 +39,15 @@ splitInto :: Int -> [a] -> [[a]]
 splitInto _ [] = []
 splitInto columns list = let (head, rest) = splitAt columns list
                   in head:splitInto columns rest
+printTable :: Monad m => Table -> Pipe String String m ()
+printTable table = traverse_ yield rowList
+    where rowList = splitInto colCount $ toList table
+          colCount = 1 + abs (snd (fst b) - snd (snd b))
+          b = bounds table
 
 solveCase :: Monad m => Int -> Pipe String String m ()
 solveCase testCase = do
-    colCount <- read <$> await
+    colCount <- await
     ballsInCols <- map read . words <$> await
     let resColIdxs = reverse $ foldl' countRows [] (zip [0..] ballsInCols)
     let resColDifferences = uncurry (-) <$> zip resColIdxs [0..]
@@ -51,7 +56,7 @@ solveCase testCase = do
                       then "IMPOSSIBLE"
                       else show rows
     yield $ "Case #" ++ show testCase ++ ": " ++ solution
-    when (solution /= "IMPOSSIBLE") $ traverse_ yield $ splitInto colCount $ toList $ createGrid resColDifferences rows
+    when (solution /= "IMPOSSIBLE") $ printTable $ createGrid resColDifferences rows
 
 solve :: Monad m => Pipe String String m ()
 solve = do
